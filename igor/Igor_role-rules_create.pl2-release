@@ -1,0 +1,165 @@
+#!/usr/local/bin/perl 
+use strict ; 
+use Getopt::Long;
+use File::Basename;
+use Tie::File; #### needed for set rule 
+
+
+#my $farm=$ARGV[0] ;
+#my $isbiz=$ARGV[1] ;
+#my $bug=$ARGV[2] ;
+#my $script =($0) ;
+my $script = basename($0);
+my $rulefile="/tmp/rule.$ENV{USER}"; ### needed to set rule file 
+
+my $Hostfile="~/farmsetrule" ;
+#my $memregxfile="/tmp/IhostRegx.$ENV{USER}" ; moved to populate script
+
+my $farm ;
+my $isbiz ;
+my $bug ;
+my $bcp ;
+my $Gtype;
+my $ptype;
+my $udbrepl ; ### needed for set rule 
+my $help ;
+
+my $helptext = " IGOR update options
+
+Usage:
+ $script --farm <farm.colo>   --bug <bugnumber>   | -f <farm.colo> -b <bugnumber>
+
+";
+
+
+GetOptions(
+    'farm=s'    => \$farm,
+    'type=s'    => \$Gtype,
+    'ptype=s'   => \$ptype,
+    'bcp=s'     => \$bcp,
+    'bug=i'     => \$bug, 
+    'isbiz=s'   => \$isbiz,
+    'udbrepl=s' => \$udbrepl,
+    'help!'     => \$help,
+) or die "Incorrect usage! $helptext \n";
+
+print "$farm \n ";
+print "$bug \n";
+print "$isbiz \n ";
+
+unless ($farm  && $bug && $udbrepl) {
+ print $helptext ."\n" ;
+ exit 1 ;
+}
+
+
+
+
+$farm =~ (m/(\d+)\.(.*)/ );
+my $farm1 = $1 ;
+my $colo = $2 ;
+#my $memregex="\@mail.farm.all,&/[^0-9]$farm1\\d\\d\\.mail\\.($colo\\.)?yahoo/" ;
+
+print "$farm1 \n ";
+print "========= PLEASE WAIT process is going on =========" ;
+my @Rolelist=`igor list -roles  mail.farm.set.$colo*`;
+#my @Rolelist=`cat ~/IGOR/Testrole.txt` ;
+
+	
+
+my $newrole = "mail.farm.set.$colo-prod-$farm1" ;
+chomp($newrole);
+ 
+print "$newrole \n " ;
+
+if ( grep {$_ =~ m/$newrole/} @Rolelist )
+{
+  print " $newrole exists \n ";
+} else 
+  { 
+#    system("igor create -role $newrole -log " Bug $bug  adding new role for  testing the automate tool $farm" ")  ;
+
+`igor create -role $newrole -log " [Bug $bug]  adding new role $newrole  for   $farm" `  ;
+
+print "$newrole CREATED \n \n "; 
+
+print "DONE done \n \n  " ;
+  }
+
+#### adding member regex ######
+
+#open (MYFILE, ">$memregxfile");
+
+#chomp($memregex);
+
+#print MYFILE "$memregex \n" ;
+ 
+#close (MYFILE);
+ 
+#`igor edit -members $newrole  -file $memregxfile -log "[Bug bug] adding regex (Testing) for member"`
+
+
+ 
+
+
+###########set rule 
+my @samprule=`igor fetch -rules mail.farm.set.gq1-prod-1100`;
+if (scalar(@samprule)>0) {
+      print scalar(@samprule) . "\n" ;
+}
+
+open (RULFILE, ">$rulefile");
+foreach my $x (@samprule) {
+print RULFILE "$x" ;
+}
+close(RULFILE);
+
+my %timezone = (
+             ukl => 'GMT',
+             ird => 'GMT',
+             aue => "Australia/Sydney",
+             cnb => 'Asia/Shanghai',
+             cnh => 'Asia/Shanghai',
+             cn3 => 'Asia/Shanghai',
+             cnh => 'Asia/Shanghai',
+             tp2 => 'Asia/Taipei',
+             tpe => 'Asia/Taipei',
+             in  => 'Asia/Calcutta',
+             in2 => 'Asia/Calcutta',
+             krs => 'Asia/Seoul',
+             kr3 => 'Asia/Seoul',
+             kr1 => 'Asia/Seoul',
+             sg1 => 'Asia/Singapore',
+             mud => 'US/Pacific',
+dcn => 'US/Pacific',
+re1 => 'US/Pacific',
+re2 => 'US/Pacific',
+re3 => 'US/Pacific',
+re4 => 'US/Pacific',
+scd => 'US/Pacific',
+sp1 => 'US/Pacific',
+ac2 => 'US/Pacific',
+ac4 => 'US/Pacific',
+sk1 => 'US/Pacific',
+gq1 => 'US/Pacific',
+
+);
+
+
+my @lines=();
+tie @lines, 'Tie::File', "$rulefile" or die "Can't read file: $!\n";
+foreach ( @lines )
+{
+  s/udbclient.service=gqa/udbclient.service=$udbrepl/g;
+  s/ymail_lpc_ls_config.farm_list=[\d,]{2,}/ymail_lpc_ls_config.farm_list=$farm1/g;
+  s/root.timezone=US\/Pacific/root.timezone=$timezone{$colo}/g;
+}
+untie @lines;
+my $newrole="mail.farm.set.$colo-prod-$farm1";
+
+####check if rule exist before updating ??? Need to do 
+`igor edit -rules  $newrole  -file $rulefile -log "[ Bug bug ] adding rules for role $newrole"` ;
+print "$newrole \n";
+print $timezone{$colo}."\n" ;
+
+print "Rules added from file $rulefile to ROLE  $newrole \n \n " ;

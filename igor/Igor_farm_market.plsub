@@ -1,0 +1,171 @@
+#!/usr/local/bin/perl
+
+use Getopt::Long;
+use strict ;
+use Data::Dumper;
+use File::Basename;
+use Tie::File; #### needed for setting rule  madding markets 
+
+
+my $script = basename($0);
+print "$script \n " ;
+print "$0 \n " ;
+
+
+# $Farmtype   #free or partner 
+# $partnertype   # att ,bizmail bt tnz verizon
+# $BCPfarm
+# $farmW
+
+my $helptext = " IGOR update options 
+
+Usage:
+#  $script --farm <farm.colo>       
+#  $script --bcp <farm.colo>
+#  $script --type <free|partner>
+#  $script --ptype <att|bizmail|bt|rogers|tnz|verizon>
+#  $script --market <cnfr|eufr|infr|kpfr|sgfr|tpfr|usfr|>
+";
+my $farm;
+my $Gtype;
+my $bcp;
+my $help;
+my $ptype;
+my $market;
+my $bug;
+my $type;
+  
+   my $partnerxset;
+   my $rolewheretoadd;
+   my $rolememberfile;
+
+GetOptions(
+    'farm=s'    => \$farm,
+    'type=s'    => \$Gtype,
+    'ptype=s'   => \$ptype,
+    'bcp=s'     => \$bcp,
+    'bug=i'     => \$bug,
+    'market=s'  => \$market,
+    'help!'     => \$help,
+) or die "Incorrect usage! $helptext \n";
+
+print "$farm \n" ;
+
+print "$Gtype \n" ;
+print "$ptype \n" ;
+print "$bcp \n";
+
+unless ($farm  && $bug && $Gtype) {
+ print $helptext ."\n" ;
+ exit 1 ;
+}
+
+$farm =~ (m/(\d+)\.(.*)/ );
+my $farm1 = $1 ;
+my $colo = $2 ;
+my $xsetfile="/tmp/xsetmembers.$ENV{USER}";
+my $xsetBCPfile="/tmp/xsetbcpmembers.$ENV{USER}";
+
+$bcp =~ (m/(\d+)\.(.*)/ );
+my $Bfarm = $1 ;
+my $Bcolo = $2;
+
+
+my $newrole = "mail.farm.set.$colo-prod-$farm1" ;
+#my $bcprole = "mail.farm.set.$Bcolo-prod-$Bfarm";
+
+########## List or partner Roles 
+#my $ mail.farm.xset.partner-att  mail.farm.xset.partner-bizmail  mail.farm.xset.partner-bt mail.farm.xset.partner-rogers mail.farm.xset.partner-tnz mail.farm.xset.partner-verizon
+#####################
+
+
+if ( $Gtype =~ m/partner/) {
+    print "$Gtype \n " ; 
+  if (!($ptype && $bcp)) { print "not defined: Give --ptype <att|bizmail> --bcp <farm.colo> \n" ; exit 1 ;} #}else { print "$ptype \n" ; }}
+
+  print "$ptype \n " ;
+  print "$bcp \n " ;
+  $partnerxset="mail.farm.xset.partner-$ptype";
+  my $bcpxset ="mail.farm.xset.bcp";
+  print "$partnerxset \n";
+ 
+#&updateigormarket($farm, $partnerxset, $xsetfile ) ;
+&updateigormarket({
+
+    farm => $farm ,
+   rolewheretoadd =>  $partnerxset,
+   rolememberfile  => $xsetfile 
+});
+
+&updateigormarket({
+ farm => $bcp,
+ rolewheretoadd => $partnerxset,
+ rolememberfile => $xsetfile,
+});
+
+&updateigormarket({
+
+ farm => $bcp,
+ rolewheretoadd => $bcpxset,
+ rolememberfile => $xsetfile
+});
+}
+    
+
+ elsif ($Gtype =~ m/free/) 
+
+ {
+   
+if (!($market )) { print "not defined: Give --market <USFR|INFR> --bcp <f
+arm.colo> \n" ; exit 1 ;} #}else { print "$ptype \n" ; }}
+
+
+  print "free farm \n ";
+my $freexset="mail.farm.xset.cat-free" ;
+my $freemarket="mail.farm.xset.market-$market";
+&updateigormarket({
+
+ farm => $farm,
+ rolewheretoadd => $freexset,
+ rolememberfile => $xsetfile
+ });
+
+&updateigormarket({
+
+ farm => $farm,
+ rolewheretoadd => $freemarket,
+ rolememberfile => $xsetfile
+ });
+}
+
+sub updateigormarket {
+ my ($args) = @_;
+$args->{farm} =~ (m/(\d+)\.(.*)/ );
+my $farm1 = $1 ;
+my $colo = $2 ;
+my $newrole = "mail.farm.set.$colo-prod-$farm1" ;
+#my   $partnerxset ;
+#my $rolewheretoadd ;
+#my $rolememberfile="/tmp/xsetmembers.$ENV{USER}";
+#my ($farm , $rolewheretoadd,   $rolememberfile )= @_;
+#print "$bcp , $farm , $newrole ,$rolewheretoadd , $rolememberfile \n" ;
+print "$args->{farm} , $newrole,  $args->{rolewheretoadd} , $args->{rolememberfile} \n" ;
+print " Adding $newrole to $args->{rolewheretoadd}  \n " ;
+system("igor fetch -members $args->{rolewheretoadd} -def > $args->{rolememberfile} 2> /dev/null " ) ;
+my  @xsetmember=`cat -s "$args->{rolememberfile}"`  ;
+
+  chomp(@xsetmember);
+
+ @xsetmember=grep(!/^\s*$/, @xsetmember); #This line is to remove empty line
+  unlink($args->{rolememberfile});  #cleanup file to start fresh file
+  push(@xsetmember,"\@$newrole");
+  foreach my $p (@xsetmember)
+  {
+  system ("echo -e $p >> $args->{rolememberfile}");
+  }
+print "PLEASE WAIT \n ";
+
+`igor edit -members $args->{rolewheretoadd} -file $args->{rolememberfile} -log "[Bug $bug] adding $newrole to $rolewheretoadd"` ;
+
+print "ADDED successfully \n \n " 
+}
