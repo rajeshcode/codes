@@ -1,0 +1,6 @@
+What to be a good Programmer
+ Goal:
+ Build Scallable Application using Ruby
+ Understand OOPs in Ruby
+ How and where we can use Ruby effectively
+ Like to Compare Perl , Python with Ruby
