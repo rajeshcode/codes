@@ -1,0 +1,87 @@
+require 'json'
+
+path = File.join(File.dirname(__FILE__), '../data/products.json')
+file = File.read(path)
+$toys_data = JSON.parse(file)
+
+# Print today's date
+time = Time.new
+puts time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+
+
+	puts " _                         _     "
+	puts "| |                       | |    "
+	puts "| |__  _ __ __ _ _ __   __| |___ "
+	puts "| '_ \\| '__/ _` | '_ \\ / _` / __|"
+	puts "| |_) | | | (_| | | | | (_| \\__ \\"
+	puts "|_.__/|_|  \\__,_|_| |_|\\__,_|___/"
+	puts
+
+# For each brand in the data set:
+  # Print the name of the brand
+  # Count and print the number of the brand's toys we stock
+  # Calculate and print the average price of the brand's toys
+  # Calculate and print the total revenue of all the brand's toy sales combined
+a=0
+y=0
+arr=[]
+a2={}
+arrh={}
+$toys_data["items"].each do |toy|
+# puts toy["brand"]
+arr << toy["brand"]
+#arr << toy["stock"]
+  #print " The total Brand: "
+  #print " Average Price of Each Brand: "
+#print " Total Sales of All Brands: "
+end
+arr.each do |e|
+  a2[e] = 0 if a2[e].nil?
+  a2[e] = a2[e] + 1
+end
+#puts a2
+
+#   puts arr.uniq
+#puts $toys_data["items"].map { |toy| toy["brand"] }.uniq
+
+def brands
+    #@brands ||= $toys_data["items"].map { |toy| toy["brand"] }.uniq
+    $toys_data["items"].map { |toy| toy["brand"] }.uniq
+end
+
+
+def products_by(brand)
+  $toys_data["items"].select { |toy| toy["brand"] == brand }
+end
+
+totbrandsales=0
+brands.each do |brand|
+    puts brand
+    30.times {print  "*****"}
+    print "\n"
+    brand_price=0
+    avg_price=0
+    products_by(brand).each do |product|
+          #puts product["full-price"]
+          brand_price = brand_price + product["full-price"].to_f
+          product["purchases"].each do |value|
+             totbrandsales = totbrandsales + value["price"]
+          end
+          #puts totbrandsales
+    end
+          print "Number of Products: "
+          puts products_by(brand).length
+          
+          print "Average Product Price: "
+          avg_price=brand_price/products_by(brand).length
+          puts avg_price.round(2)
+          print "Total Sales: "
+          puts totbrandsales.round(2)
+          print "\n"
+          
+end
+#cc=toys_data["items"].select { |toy| toy['brand'] == "LEGO" }
+#cc=products_by('LEGO')
+#puts cc
