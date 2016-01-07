@@ -27,8 +27,6 @@ puts "|_|                                       "
   # Calculate and print the average discount based off the average sales price
 
 
-#puts toys_data
-
 # For each product in the data set:
 $toys_data["items"].each do |toy|
   tsales=0
@@ -60,12 +58,9 @@ $toys_data["items"].each do |toy|
   #puts "#{result} %"
   puts result.round(2).to_s + "%"
 
-
   30.times {print  "*****"}
   print "\n\n"
 end
-
-
 
 
 	puts " _                         _     "
