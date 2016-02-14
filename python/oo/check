@@ -1,0 +1,39 @@
+#!/usr/bin/python
+
+import random
+
+X="hello"
+print type(X)
+
+is_type = type(X)
+print type(is_type)
+
+def well1():
+    print "helll"
+
+
+
+well1()
+class Myclass(object):
+    pass
+    var = 10
+    def callme(self):
+        print("call me hello supper")
+        print(self) # Self implcitly passed 1st argument for method
+        self.rand_val = random.randint(1,10)
+
+
+
+this_obj = Myclass()
+print this_obj
+
+print this_obj.var
+print this_obj.callme()  # this will print None also as it doesn't return any thing
+this_obj.callme()
+print (this_obj.rand_val)
+print this_obj.var
+
+
+
+
+
