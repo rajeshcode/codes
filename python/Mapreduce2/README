@@ -1,0 +1,13 @@
+###
+
+
+HOW to EXECUTE 
+
+-input /user/rajec/knox-data-Flume/2017/10/31/14/*gateway.log*  ( HDFS PATH )
+ -output /user/rajec/knox-data-Flume/OUTPUT   ( HDFS PATH )
+ -reducer ./RajeshReducer.py1 Local files in ClientNode
+chmod u+c ./RajeshReducer.py1  
+chmod u+x ./RajeshMapper.py1
+++++
+$  /apache/hadoop/bin/hadoop jar /apache/hadoop/share/hadoop/tools/lib/hadoop-streaming-2.7.1.2.4.2.0-258.jar  -Dmapred.job.queue.name=hdlq-struct-default   -D mapred.reduce.tasks=1  -file ./RajeshMapper.py1  -mapper ./RajeshMapper.py1  -file ./RajeshReducer.py1  -reducer ./RajeshReducer.py1 -input /user/rajec/knox-data-Flume/2017/10/31/14/*gateway.log*  -output /user/rajec/knox-data-Flume/OUTPUT
++++++++++
